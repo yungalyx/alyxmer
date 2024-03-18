@@ -111,6 +111,23 @@ do-it:
     just send-packet optimism false
     echo "You've done it!"
 
+
+do-it-universally:
+    echo "Running the full E2E flow... (universally)"
+    just set-contracts optimism XCounterUC && just set-contracts base XCounterUC
+    just deploy optimism base true
+    just send-packet optimism true
+    echo "You've done it (universally)!"
+    
+
+
+dew-it:
+    echo "Running full E2E test for NFT Bridge"
+    just set-contracts optimism 
+    just deploy optimism base fase
+    just send-nft optimism false
+    echo "Success!"
+
 # Clean up the environment by removing the artifacts and cache folders and running the forge clean command
 # Usage: just clean
 clean:
