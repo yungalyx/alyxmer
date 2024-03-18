@@ -1,3 +1,18 @@
+# YungAlyx's notes: 
+
+1. overview: https://github.com/polymerdevs/Quest-Into-The-Polyverse-Phase-1?tab=readme-ov-file#1-create-a-cross-chain-dapp-using-using-ibc-with-custom-or-universal-channels
+2. we are building cross chain NFT bridge using the universal ibc middleware dispaatcher 
+
+
+notable commands: 
+- just install 
+- just do-it, just dew-it (this deploys and sends packets)
+- forge test -vvv (v for verbosity levels, more v = more verbosity)
+
+
+
+
+
 # ⛓️🔗⛓️ Template for IBC enabled Solidity contracts
 
 This repo provides a starter project to build [IBC](https://github.com/cosmos/ibc) enabled Solidity contracts that connect rollups to one another Polymer Hub, through the [vIBC core contracts](https://github.com/open-ibc/vibc-core-smart-contracts).
