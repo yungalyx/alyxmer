@@ -20,8 +20,8 @@ struct NonFungibleTokenPacketData {
   uint256 tokenId;
   string tokenUri;
   string tokenData;
-  string sender;
-  string receiver;
+  address sender;
+  address receiver;
   string memo;
 }
 

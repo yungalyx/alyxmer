@@ -8,59 +8,130 @@ import "forge-std/console.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
 contract NFTBridgeTest is Test {
-    NFTBridgeUC public nftBridge;
-    NFT public myNFT;
 
-    string BASE_RPC_URL = vm.envString("BASE_RPC_URL");
-    // string OPTIMISM_RPC_URL = vm.envString("OPTIMISM_RPC_URL");
+  uint256 baseMainnet;
+  uint256 baseSepolia;
+  uint256 optimismSepolia;
+
+
+    function stringToBytes32(string memory source) public pure returns (bytes32 result) {
+        bytes memory tempEmptyStringTest = bytes(source);
+        if (tempEmptyStringTest.length == 0) {
+            return 0x0;
+        }
+
+        assembly {
+            result := mload(add(source, 32))
+        }
+    }
 
     function setUp() public {
 
-      //MAINNET_RPC_URL = 'https://eth-mainnet.g.alchemy.com/v2/ALCHEMY_KEY'
-    
+      baseMainnet = vm.createFork("https://mainnet.base.org");
+      baseSepolia = vm.createFork("https://sepolia.base.org");
+      optimismSepolia = vm.createFork("https://sepolia.optimism.io");        
+        
+    }
+
+
+    function test_ping_pong() public {
+      vm.selectFork(baseSepolia);
+      vm.chainId(84532);
       
-        // console.log(vm.activeFork());
-        uint256 forkId = vm.createFork("https://mainnet.base.org");
-        // uint256 fork2Id = vm.createFork(BASE_RPC_URL);
+      NFTBridgeUC baseBridge = new NFTBridgeUC(0xfC1d3E02e00e0077628e8Cc9edb6812F95Db05dC); // this is a random address, just testing NFT related things 
+      vm.makePersistent(address(baseBridge));
+      assertEq(vm.activeFork(), baseSepolia);
+
+      vm.selectFork(optimismSepolia);
+      vm.chainId(11155420);
+      assertEq(baseBridge.ping(), "pong");
+      assertEq(vm.activeFork(), optimismSepolia);
+
+    
+
+     
+      NFTBridgeUC opBridge = new NFTBridgeUC(0x58f1863F75c9Db1c7266dC3d7b43832b58f35e83);
+      vm.makePersistent(address(opBridge));
+      assertNotEq(opBridge.getChainId(), baseBridge.getChainId());
+
+    }
+
+    function test_transfer_real() public {
+
+      // deployments on base
+      vm.selectFork(baseSepolia);
+
+     
+      NFTBridgeUC baseBridge = new NFTBridgeUC(0xfC1d3E02e00e0077628e8Cc9edb6812F95Db05dC); // this is a random address, just testing NFT related things 
+    
+      vm.makePersistent(address(baseBridge));
+
+      // deployments on optimism
+      vm.selectFork(optimismSepolia);
+      NFTBridgeUC opBridge = new NFTBridgeUC(0x58f1863F75c9Db1c7266dC3d7b43832b58f35e83);
+      NFT myNFT = new NFT();
+      myNFT.Mint();
+  
+      vm.makePersistent(address(myNFT));
+
+      console.log("minted NFT");
+ 
+      
+      bytes32 channelId = stringToBytes32('channel-11');
+      opBridge.configureBridge(84532, address(baseBridge), channelId);
+      vm.makePersistent(address(opBridge));
         
-        
-        // vm.selectFork(forkId);
+      // approve and transfer
+      address owner = IERC721(address(myNFT)).ownerOf(0);
+      IERC721(address(myNFT)).approve(address(opBridge), 0);
+
+      opBridge.initiateSend(address(myNFT), 0, owner, 84532); // send to base sepolia 
+
+
+      console.log("made it here");
+
+      
+      assertEq(IERC721(address(myNFT)).ownerOf(0), address(opBridge));
+
+
+
+      // check if successful on Sepolia
+      vm.selectFork(baseSepolia);
+
+      assertEq(opBridge.ping(), "pong");
 
   
-
-        nftBridge = new NFTBridgeUC(0xFa658e6aE02eC4210F76033B0Ea365517B797cCE); // this is a random address, just testing NFT related things 
-
+   
     }
 
-    function testFork() public {
-      assertEq(vm.activeFork(), 0);
-    }
 
-    function test_valid() public {
-
-        myNFT = new NFT();
-        myNFT.Mint();
-        
-        address owner = IERC721(address(myNFT)).ownerOf(0);
-
-        nftBridge.initiateSend(address(myNFT), 0);
-   
-        //address owner = IERC721(address(0xA449b4f43D9A33FcdCF397b9cC7Aa909012709fD)).ownerOf(4728);
-   
-
-        
-
-    //   //vm.startPrank(0x5D0aC389c669D6EFE3BA96B9878d8156f180C539);
-    //   // console.log("prank started");
-
+    function test_return_failed() public {
       
-    //   // OFsNFT.approve(address(nftbuc), 643);
-    //   // console.log("nft approved");
-    //   // nftbuc.send(0xA449b4f43D9A33FcdCF397b9cC7Aa909012709fD, 643); // base gods address, 
+    }
+
+    function test_ack_failed() public {
+
+      vm.selectFork(baseSepolia);
+
+      NFTBridgeUC baseBridge = new NFTBridgeUC(0xfC1d3E02e00e0077628e8Cc9edb6812F95Db05dC); 
+
+      bytes32 channelId = stringToBytes32('channel-11');
+      bytes memory padloay = abi.encode("nothing");
+      uint64 timeoutTimestamp = uint64((block.timestamp + 3600000) * 1000000000);
+
+      bytes32 to = hex"014a34";
+    
+  
+      IbcUniversalPacketSender(0xfC1d3E02e00e0077628e8Cc9edb6812F95Db05dC).sendUniversalPacket(
+          channelId, to, padloay, timeoutTimestamp
+      );
 
 
-    //   vm.stopPrank();
-   
+
+    }
+
+    function test_transfer_voucher() public {
+
     }
 
 }
