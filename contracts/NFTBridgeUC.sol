@@ -106,26 +106,29 @@ contract NFTBridgeUC is UniversalChanIbcApp, ERC721, IERC721Receiver {
     }
 
     
+    function _receive(bytes32 srcPort, NonFungibleTokenPacketData memory nftpd) internal {
+      // string prefix = srcPort + '/' + nftpd.
+      // prefix = data.sourcePort + '/' + data.sourceChannel
 
-    
+      if (nftpd.hops) { 
+        // createUpdateClass;
+        _mint(nftpd.reciever, 2); 
 
+      } else {
+        IERC721(nftpd.classId).transferFrom(address(this), nftpd.receiver, nftpd.tokenId);
+      }
 
-    // When a non-fungible token is sent back toward its source,
-    // the bridge module burns the token on the sending chain
-    // and unescrows the corresponding locked token on the receiving chain.
-
-    // I BEFORE E, EXCEPT AFTER C 
-    function _receive(NonFungibleTokenPacketData memory nftpd) internal {
-
-      // either unescrows on base 
-
-
-      // or mints a voucher on dst
-
-      
-      // uint256 newID = (uint256(uint160(nftpd.classId)) << 128) | nftpd.tokenId;
-      // _safeMint(nftpd.receiver, newID);
-      // return newID;
+  //   // we are source chain if classId is prefixed with packet's sourcePort and sourceChannel
+  //   source = data.classId.slice(0, len(prefix)) === prefix
+  //   for (var i in data.tokenIds) {
+  //     if source { // we are source chain, un-escrow token to receiver
+  //       nft.Transfer(data.classId.slice(len(prefix)), data.tokenIds[i], data.receiver, data.tokenData[i])
+  //     } else { // we are sink chain, mint voucher to receiver
+  //       prefixedClassId = data.destPort + '/' + data.destChannel + '/' + data.classId
+  //       nft.CreateOrUpdateClass(prefixedClassId, data.classUri, data.classData)
+  //       nft.Mint(prefixedClassId, data.tokenIds[i], data.tokenUris[i], data.tokenData[i], data.receiver)
+  //     }
+  //   }
 
     }
 
@@ -133,6 +136,7 @@ contract NFTBridgeUC is UniversalChanIbcApp, ERC721, IERC721Receiver {
 
 
 
+    // this needs to update hops before / after sending
     function CreateOrUpdateClass() public {
 
     }
@@ -151,11 +155,14 @@ contract NFTBridgeUC is UniversalChanIbcApp, ERC721, IERC721Receiver {
 
     }
 
-    function GetOwner() public {
+    function GetOwner(uint256 tknid) public pure {
+      return ownerOf(tknid);
 
     }
 
+    // 
     function getNFT() public {
+
 
     }
 
@@ -164,10 +171,10 @@ contract NFTBridgeUC is UniversalChanIbcApp, ERC721, IERC721Receiver {
     }
 
     function refundToken(UniversalPacket calldata packet) private {
-
+      IERC721(nftpd.classId).transferFrom(address(this), nftpd.receiver, nftpd.tokenId);
+      // _burn()
+      // _burn(1); // this may revert if not exists. 
     }
-
-
 
 
   // PACKET RELAY
@@ -211,58 +218,14 @@ contract NFTBridgeUC is UniversalChanIbcApp, ERC721, IERC721Receiver {
       // bytes memory payload = abi.encode(msg.sender, counter);
 
     bytes memory payload = abi.encode(nftpd);
-    bytes memory padloay = abi.encode("nothing");
     
     uint64 timeoutTimestamp = uint64((block.timestamp + 3600000) * 1000000000);
   
-
     IbcUniversalPacketSender(mw).sendUniversalPacket(
-        channelId[_chain], IbcUtils.toBytes32(destPortAddr[_chain]), padloay, timeoutTimestamp
+        channelId[_chain], IbcUtils.toBytes32(destPortAddr[_chain]), payload, timeoutTimestamp
     );
 
-    console.log("after send");
   }
-  
-//   function createOutgoingPacket(
-//     classId: string,
-//     tokenIds: string[],
-//     sender: string,
-//     receiver: string,
-//     destPort: string,
-//     destChannel: string,
-//     sourcePort: string,
-//     sourceChannel: string,
-//     timeoutHeight: Height,
-//     timeoutTimestamp: uint64): uint64 {
-//     prefix = sourcePort + '/' + sourceChannel
-//     // we are source chain if classId is not prefixed with sourcePort and sourceChannel
-//     source = classId.slice(0, len(prefix)) !== prefix
-//     tokenUris = []
-//     tokenData = []
-//   for (let tokenId in tokenIds) {
-//     // ensure that sender is token owner
-//     abortTransactionUnless(sender === nft.GetOwner(classId, tokenId))
-//     if source { // we are source chain, escrow token
-//       nft.Transfer(classId, tokenId, channelEscrowAddresses[sourceChannel], null)
-//     } else { // we are sink chain, burn voucher
-//       nft.Burn(classId, tokenId)
-//     }
-//     token = nft.GetNFT(classId, tokenId)
-//     tokenUris.push(token.GetUri())
-//     tokenData.push(token.GetData())
-//   }
-
-//   sequence = Handler.sendPacket(
-//     getCapability("port"),
-//     sourcePort,
-//     sourceChannel,
-//     timeoutHeight,
-//     timeoutTimestamp,
-//     protobuf.marshal(data) // protobuf-marshalled bytes of packet data
-//   )
-//   return sequence
-// }
-
   
 
       /**
@@ -282,36 +245,10 @@ contract NFTBridgeUC is UniversalChanIbcApp, ERC721, IERC721Receiver {
 
         NonFungibleTokenPacketData memory nftpd = abi.decode(packet.appData, (NonFungibleTokenPacketData));
   
-        _receive(nftpd);
+        _receive(packet.srcPortAddr, nftpd);
 
-        return AckPacket(true, abi.encode("Ackonoledged"));
+        return AckPacket(true, abi.encode("Acknowledged"));
     }
-
-    // function onRecvPacket(packet: Packet) {
-    //   NonFungibleTokenPacketData data = packet.data
-    //   // construct default acknowledgement of success
-    //   NonFungibleTokenPacketAcknowledgement ack = NonFungibleTokenPacketAcknowledgement{true, null}
-    //   err = ProcessReceivedPacketData(data)
-    //   if (err !== null) {
-    //     ack = NonFungibleTokenPacketAcknowledgement{false, err.Error()}
-    //   }
-    //   return ack
-    // }
-
-  // function ProcessReceivedPacketData(data: NonFungibleTokenPacketData) {
-  //   prefix = data.sourcePort + '/' + data.sourceChannel
-  //   // we are source chain if classId is prefixed with packet's sourcePort and sourceChannel
-  //   source = data.classId.slice(0, len(prefix)) === prefix
-  //   for (var i in data.tokenIds) {
-  //     if source { // we are source chain, un-escrow token to receiver
-  //       nft.Transfer(data.classId.slice(len(prefix)), data.tokenIds[i], data.receiver, data.tokenData[i])
-  //     } else { // we are sink chain, mint voucher to receiver
-  //       prefixedClassId = data.destPort + '/' + data.destChannel + '/' + data.classId
-  //       nft.CreateOrUpdateClass(prefixedClassId, data.classUri, data.classData)
-  //       nft.Mint(prefixedClassId, data.tokenIds[i], data.tokenUris[i], data.tokenData[i], data.receiver)
-  //     }
-  //   }
-  // }
 
 
   /**

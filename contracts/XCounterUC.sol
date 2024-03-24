@@ -54,7 +54,7 @@ contract XCounterUC is UniversalChanIbcApp {
     {
         recvedPackets.push(UcPacketWithChannel(channelId, packet));
 
-        (address payload, uint64 c) = abi.decde(packet.appData, (address, uint64));
+        (address payload, uint64 c) = abi.decode(packet.appData, (address, uint64));
         counterMap[c] = payload;
 
         increment();
