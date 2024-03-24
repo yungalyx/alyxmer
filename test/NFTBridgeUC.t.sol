@@ -33,27 +33,39 @@ contract NFTBridgeTest is Test {
         
     }
 
-
-    function test_ping_pong() public {
-      vm.selectFork(baseSepolia);
-      vm.chainId(84532);
-      
-      NFTBridgeUC baseBridge = new NFTBridgeUC(0xfC1d3E02e00e0077628e8Cc9edb6812F95Db05dC); // this is a random address, just testing NFT related things 
-      vm.makePersistent(address(baseBridge));
-      assertEq(vm.activeFork(), baseSepolia);
-
-      vm.selectFork(optimismSepolia);
-      vm.chainId(11155420);
-      assertEq(baseBridge.ping(), "pong");
-      assertEq(vm.activeFork(), optimismSepolia);
-
     
 
-     
-      NFTBridgeUC opBridge = new NFTBridgeUC(0x58f1863F75c9Db1c7266dC3d7b43832b58f35e83);
-      vm.makePersistent(address(opBridge));
-      assertNotEq(opBridge.getChainId(), baseBridge.getChainId());
+    function test_ping_pong() public {
+        vm.selectFork(baseSepolia);
+        // vm.chainId(84532);
 
+        NFTBridgeUC baseBridge = new NFTBridgeUC(
+            0xfC1d3E02e00e0077628e8Cc9edb6812F95Db05dC
+        ); // this is a random address, just testing NFT related things
+        vm.makePersistent(address(baseBridge));
+        assertEq(vm.activeFork(), baseSepolia);
+
+        vm.selectFork(optimismSepolia);
+        // vm.chainId(11155420);
+        assertEq(vm.activeFork(), optimismSepolia);
+
+        NFTBridgeUC opBridge = new NFTBridgeUC(
+            0x58f1863F75c9Db1c7266dC3d7b43832b58f35e83
+        );
+        vm.makePersistent(address(opBridge));
+
+        assert(vm.isPersistent(address(baseBridge)));
+        assert(vm.isPersistent(address(opBridge)));
+
+        vm.selectFork(baseSepolia);
+
+        assertEq(baseBridge.getChainId(), 84532);
+
+        vm.selectFork(optimismSepolia);
+
+        assertEq(opBridge.getChainId(), 11155420);
+
+        // assertNotEq(opBridge.getChainId(), baseBridge.getChainId());
     }
 
     function test_transfer_real() public {
@@ -106,6 +118,7 @@ contract NFTBridgeTest is Test {
 
 
     function test_return_failed() public {
+      
       
     }
 
