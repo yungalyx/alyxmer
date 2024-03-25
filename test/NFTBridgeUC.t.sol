@@ -117,6 +117,7 @@ contract NFTBridgeTest is Test {
         // Base handler call onRecvPacket
 
         // Fake Base Received
+        vm.selectFork(baseSepolia);
         address universalFakeHandler = address(1);
         vm.prank(universalFakeHandler);
         UniversalPacket memory packet = UniversalPacket({
