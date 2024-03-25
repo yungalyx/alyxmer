@@ -16,6 +16,8 @@ contract NFTBridgeUC is UniversalChanIbcApp, ERC721, IERC721Receiver {
 
     address private maintainer;
 
+    event NFTPayload(bytes payload);
+
     mapping(uint64 => address) private destPortAddr;
     mapping(uint64 => bytes32) private channelId;
 
@@ -112,20 +114,19 @@ contract NFTBridgeUC is UniversalChanIbcApp, ERC721, IERC721Receiver {
         bytes32 srcPort,
         NonFungibleTokenPacketData memory nftpd
     ) internal {
+        // TODO: fix the bug
         // string prefix = srcPort + '/' + nftpd.
         // prefix = data.sourcePort + '/' + data.sourceChannel
-
-        if (nftpd.hops) {
-            // createUpdateClass;
-            _mint(nftpd.reciever, 2);
-        } else {
-            IERC721(nftpd.classId).transferFrom(
-                address(this),
-                nftpd.receiver,
-                nftpd.tokenId
-            );
-        }
-
+        // if (nftpd.hops) {
+        //     // createUpdateClass;
+        //     _mint(nftpd.reciever, 2);
+        // } else {
+        //     IERC721(nftpd.classId).transferFrom(
+        //         address(this),
+        //         nftpd.receiver,
+        //         nftpd.tokenId
+        //     );
+        // }
         //   // we are source chain if classId is prefixed with packet's sourcePort and sourceChannel
         //   source = data.classId.slice(0, len(prefix)) === prefix
         //   for (var i in data.tokenIds) {
@@ -148,9 +149,9 @@ contract NFTBridgeUC is UniversalChanIbcApp, ERC721, IERC721Receiver {
 
     function Burn() public {}
 
-    function GetOwner(uint256 tknid) public pure {
-        return ownerOf(tknid);
-    }
+    // function GetOwner(uint256 tknid) public pure {
+    //     return ownerOf(tknid);
+    // }
 
     //
     function getNFT() public {}
@@ -158,6 +159,11 @@ contract NFTBridgeUC is UniversalChanIbcApp, ERC721, IERC721Receiver {
     function getClass() public {}
 
     function refundToken(UniversalPacket calldata packet) private {
+        NonFungibleTokenPacketData memory nftpd = abi.decode(
+            packet.appData,
+            (NonFungibleTokenPacketData)
+        );
+
         IERC721(nftpd.classId).transferFrom(
             address(this),
             nftpd.receiver,
@@ -183,20 +189,28 @@ contract NFTBridgeUC is UniversalChanIbcApp, ERC721, IERC721Receiver {
     //     }
     //   }
 
-    // Local Testing Functions
+    // Testing
 
-    function onRecvPacket(
+    function onRecvUniversalPacketTest(
         bytes32 _channelId,
         UniversalPacket calldata packet
     ) external returns (AckPacket memory ackPacket) {
         // recvedPackets.push(UcPacketWithChannel(channelId, packet));
+        console.log("success");
 
+        bytes memory payload = packet.appData;
+        console.log("success1");
         NonFungibleTokenPacketData memory nftpd = abi.decode(
-            packet.appData,
+            payload,
             (NonFungibleTokenPacketData)
         );
 
-        _receive(packet.srcPortAddr, nftpd);
+        console.log("success2");
+        console.log(nftpd.tokenId);
+
+        // TODO: uncomment
+
+        // _receive(packet.srcPortAddr, nftpd);
 
         return AckPacket(true, abi.encode("Acknowledged"));
     }
@@ -226,6 +240,8 @@ contract NFTBridgeUC is UniversalChanIbcApp, ERC721, IERC721Receiver {
         // bytes memory payload = abi.encode(msg.sender, counter);
 
         bytes memory payload = abi.encode(nftpd);
+
+        emit NFTPayload(payload);
 
         uint64 timeoutTimestamp = uint64(
             (block.timestamp + 3600000) * 1000000000
