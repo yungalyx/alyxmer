@@ -27,20 +27,7 @@ contract NFTBridgeUC is UniversalChanIbcApp, ERC721, IERC721Receiver {
         maintainer = msg.sender;
     }
 
-    // APPLICATION SPECIFIC LOGIC
-
-    function ping() public pure returns (string memory ret) {
-        ret = "pong";
-    }
-
-    function configureBridge(
-        uint64 _chain,
-        address _dstPort,
-        bytes32 _channelId
-    ) public onlyOwner {
-        destPortAddr[_chain] = _dstPort;
-        channelId[_chain] = _channelId;
-    }
+    // Verify the Send and Receive Flow
 
     function initiateSend(
         address _nftContract,
