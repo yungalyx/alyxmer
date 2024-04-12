@@ -13,8 +13,8 @@ pragma solidity ^0.8.9;
 // }
 
 struct NonFungibleTokenPacketData {
-  address classId;
-  string hops;
+  string classId; // follows ICS721 standard
+  address classAddress; // cant convert string to address, so keeping this 
   string classUri;
   string classData;
   uint256 tokenId;

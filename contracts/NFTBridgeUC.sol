@@ -39,9 +39,9 @@ contract NFTBridgeUC is UniversalChanIbcApp, ERC721, IERC721Receiver {
 
         NonFungibleTokenPacketData memory nftpd = NonFungibleTokenPacketData({
             classId: _nftContract,
+            classAddress: _nftContract, 
             classUri: nft.name(),
             classData: "",
-            hops: "",
             tokenId: _tokenId,
             tokenUri: nft.tokenURI(_tokenId),
             tokenData: "",
@@ -97,13 +97,20 @@ contract NFTBridgeUC is UniversalChanIbcApp, ERC721, IERC721Receiver {
             );
     }
 
+    // example of bytes32: 0x626c756500000000000000000000000000000000000000000000000000000000
     function _receive(
+        bytes32 srcChannel,
         bytes32 srcPort,
         NonFungibleTokenPacketData memory nftpd
     ) internal {
-        // TODO: fix the bug
-        // string prefix = srcPort + '/' + nftpd.
-        // prefix = data.sourcePort + '/' + data.sourceChannel
+      
+        string memory port = bytes32ToString(srcPort);
+        string memory channel = bytes32ToString(srcChannel);
+        string memory prefix = string(abi.encodePacked(port, "/", channel));
+        
+
+        bool source = _compare(substring(nftpd.classId, 0, bytes(prefix).length), prefix);
+
         // if (nftpd.hops) {
         //     // createUpdateClass;
         //     _mint(nftpd.reciever, 2);
@@ -114,8 +121,20 @@ contract NFTBridgeUC is UniversalChanIbcApp, ERC721, IERC721Receiver {
         //         nftpd.tokenId
         //     );
         // }
-        //   // we are source chain if classId is prefixed with packet's sourcePort and sourceChannel
-        //   source = data.classId.slice(0, len(prefix)) === prefix
+          // we are source chain if classId is prefixed with packet's sourcePort and sourceChannel
+
+          if (source) {
+            // todo: determine the tokenId
+        
+            IERC721(nftpd.classAddress).transferFrom(address(this), nftpd.receiver, nftpd.tokenId);
+
+          } else {
+             // prefixedClassId = data.destPort + '/' + data.destChannel + '/' + data.classId
+            // string memory prefix2 = string(abi.encodePacked(address(this), "/", ))
+            _mint(nftpd.reciever, combineUintAndAddress(nftpd.tokenId, nftpd.classAddress));
+          }
+         
+
         //   for (var i in data.tokenIds) {
         //     if source { // we are source chain, un-escrow token to receiver
         //       nft.Transfer(data.classId.slice(len(prefix)), data.tokenIds[i], data.receiver, data.tokenData[i])
@@ -131,18 +150,30 @@ contract NFTBridgeUC is UniversalChanIbcApp, ERC721, IERC721Receiver {
 
     // this needs to update hops before / after sending
     function CreateOrUpdateClass() public {}
+   
 
-    function Mint() public {}
+    function Mint(string classId, uint256 tokenId, string tokenURI, string tokenData, string reciever) private pure {
+    // creates a new NFT identified by <classId,tokenId>
+    // receiver becomes owner of the newly minted NFT
 
-    function Burn() public {}
+    }
 
-    // function GetOwner(uint256 tknid) public pure {
-    //     return ownerOf(tknid);
-    // }
+    // destroys the NFT identified by <classId,tokenId>
+    function Burn(string classId, uint256 tokenId) private pure {
+
+    }
+
+
+    function GetOwner(uint256 tknid) public pure {
+        return ownerOf(tknid);
+    }
 
     //
-    function getNFT() public {}
+    function getNFT(address classId, uint256 tokenId) public {
 
+    }
+
+    // returns NFT Class identified by classId
     function getClass() public {}
 
     function refundToken(UniversalPacket calldata packet) private {
@@ -195,9 +226,7 @@ contract NFTBridgeUC is UniversalChanIbcApp, ERC721, IERC721Receiver {
         console.log("success2");
         console.log(nftpd.tokenId);
 
-        // TODO: uncomment
-
-        // _receive(packet.srcPortAddr, nftpd);
+        _receive(packet.srcPortAddr, nftpd);
 
         return AckPacket(true, abi.encode("Acknowledged"));
     }
@@ -260,7 +289,7 @@ contract NFTBridgeUC is UniversalChanIbcApp, ERC721, IERC721Receiver {
             (NonFungibleTokenPacketData)
         );
 
-        _receive(packet.srcPortAddr, nftpd);
+        _receive(_channelId, packet.srcPortAddr, nftpd);
 
         return AckPacket(true, abi.encode("Acknowledged"));
     }
@@ -319,6 +348,68 @@ contract NFTBridgeUC is UniversalChanIbcApp, ERC721, IERC721Receiver {
             keccak256(abi.encodePacked(str1)) ==
             keccak256(abi.encodePacked(str2));
     }
+
+    function substring(string calldata str, uint startIndex, uint endIndex) private pure returns (string memory) {
+        bytes memory strBytes = bytes(str);
+        bytes memory result = new bytes(endIndex-startIndex);
+        for(uint i = startIndex; i < endIndex; i++) {
+            result[i-startIndex] = strBytes[i];
+        }
+        return string(result);
+    }
+
+
+    function toString(address _addr) private pure returns (string memory) {
+        bytes32 value = bytes32(uint256(uint160(_addr)));
+        bytes memory alphabet = "0123456789abcdef";
+        
+        bytes memory str = new bytes(42);
+        str[0] = '0';
+        str[1] = 'x';
+        
+        for (uint256 i = 0; i < 20; i++) {
+            str[2 + i * 2] = alphabet[uint8(value[i + 12] >> 4)];
+            str[3 + i * 2] = alphabet[uint8(value[i + 12] & 0x0f)];
+        }
+        
+        return string(str);
+    }
+
+     function bytes32ToString(bytes32 _bytes32) private pure returns (string memory) {
+        uint8 i = 0;
+        while(i < 32 && _bytes32[i] != 0) {
+            i++;
+        }
+        bytes memory bytesArray = new bytes(i);
+        for (i = 0; i < 32 && _bytes32[i] != 0; i++) {
+            bytesArray[i] = _bytes32[i];
+        }
+        return string(bytesArray);
+    }
+
+    function stringToBytes32(string memory source) private pure returns (bytes32 result) {
+        bytes memory tempEmptyStringTest = bytes(source);
+        if (tempEmptyStringTest.length == 0) {
+            return 0x0;
+        }
+
+        assembly {
+            result := mload(add(source, 32))
+        }
+    }
+
+    function combineUintAndAddress(uint256 uintPart, address addressPart) public pure returns (uint256) {
+        return uint256(uintPart) * 2**160 + uint256(uint160(addressPart));
+    }
+
+    function extractUintAndAddress(uint256 combinedValue) public pure returns (uint256 uintPart, address addressPart) {
+        uintPart = combinedValue / 2**160; // Extracting the uint256 part
+        addressPart = address(uint160(combinedValue & ((1 << 160) - 1))); // Extracting the address part
+    }
+
+
+
+
 
     function getChainId() public view returns (uint) {
         return block.chainid;
