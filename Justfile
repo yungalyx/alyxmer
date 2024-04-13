@@ -4,6 +4,14 @@ install:
     npm install
     forge install
 
+
+# Update the config.json file with the contract type for a specified chain/rollup
+# Usage: just set-contracts [chain] [contract_type]
+set-contracts CHAIN CONTRACT_TYPE:
+    echo "Updating config.json with contract type..."
+    node scripts/set-contracts-config.js {{CHAIN}} {{CONTRACT_TYPE}}
+
+
 # Compile contracts using the specified compiler or default to Hardhat
 # The compiler argument is optional; if not provided, it defaults to "hardhat".
 # Usage: just compile [compiler]
@@ -20,11 +28,6 @@ compile COMPILER='hardhat':
         exit 1
     fi
 
-# Update the config.json file with the contract type for a specified chain/rollup
-# Usage: just set-contracts [chain] [contract_type]
-set-contracts CHAIN CONTRACT_TYPE:
-    echo "Updating config.json with contract type..."
-    node scripts/set-contracts-config.js {{CHAIN}} {{CONTRACT_TYPE}}
 
 # Deploy the contracts in the /contracts folder using Hardhat and updating the config.json file
 # The source and destination arguments are REQUIRED;
@@ -45,6 +48,7 @@ deploy SOURCE DESTINATION UNIVERSAL='true':
 
 # Run the sanity check script to verify that configuration (.env) files match with deployed contracts' stored values
 # Usage: just sanity-check [universal=true]
+
 sanity-check UNIVERSAL='true':
     echo "Running sanity check..."
     node scripts/sanity-check.js {{UNIVERSAL}}
@@ -124,9 +128,16 @@ do-it-universally:
 dew-it:
     echo "Running full E2E test for NFT Bridge"
     just set-contracts optimism 
-    just deploy optimism base fase
+    just deploy optimism base false
     just send-nft optimism false
     echo "Success!"
+
+
+deploy-test: 
+    echo "Deploying NFT Bridge on Testnet"
+    just set-contracts optimism NFTBridgeUC && just set-contracts base NFTBridgeUC
+    just deploy optimism base true
+    echo "Deployment Successful!"
 
 # Clean up the environment by removing the artifacts and cache folders and running the forge clean command
 # Usage: just clean
