@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: UNLICENSED
+
 pragma solidity ^0.8.9;
 // this must be json encoded during the packet send
 // interface NonFungibleTokenPacketData {

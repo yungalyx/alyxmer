@@ -38,7 +38,7 @@ contract NFTBridgeUC is UniversalChanIbcApp, ERC721, IERC721Receiver {
         IERC721Metadata nft = IERC721Metadata(_nftContract);
 
         NonFungibleTokenPacketData memory nftpd = NonFungibleTokenPacketData({
-            classId: _nftContract,
+            classId: toString(_nftContract),
             classAddress: _nftContract, 
             classUri: nft.name(),
             classData: "",
@@ -132,7 +132,7 @@ contract NFTBridgeUC is UniversalChanIbcApp, ERC721, IERC721Receiver {
           } else {
              // prefixedClassId = data.destPort + '/' + data.destChannel + '/' + data.classId
             // string memory prefix2 = string(abi.encodePacked(address(this), "/", ))
-            _mint(nftpd.reciever, combineUintAndAddress(nftpd.tokenId, nftpd.classAddress));
+            _mint(nftpd.receiver, combineUintAndAddress(nftpd.tokenId, nftpd.classAddress));
           }
          
 
@@ -153,19 +153,19 @@ contract NFTBridgeUC is UniversalChanIbcApp, ERC721, IERC721Receiver {
     function CreateOrUpdateClass() public {}
    
 
-    function Mint(string classId, uint256 tokenId, string tokenURI, string tokenData, string reciever) private pure {
-    // creates a new NFT identified by <classId,tokenId>
-    // receiver becomes owner of the newly minted NFT
+    // function Mint(string calldata classId, uint256 memory tokenId, string memory tokenURI, string memory tokenData, string memory reciever) private pure {
+    // // creates a new NFT identified by <classId,tokenId>
+    // // receiver becomes owner of the newly minted NFT
 
-    }
+    // }
 
-    // destroys the NFT identified by <classId,tokenId>
-    function Burn(string classId, uint256 tokenId) private pure {
+    // // destroys the NFT identified by <classId,tokenId>
+    // function Burn(string memory classId, uint256 memory tokenId) private pure {
 
-    }
+    // }
 
 
-    function GetOwner(uint256 tknid) public pure {
+    function GetOwner(uint256 tknid) public view returns (address) {
         return ownerOf(tknid);
     }
 
@@ -183,7 +183,7 @@ contract NFTBridgeUC is UniversalChanIbcApp, ERC721, IERC721Receiver {
             (NonFungibleTokenPacketData)
         );
 
-        IERC721(nftpd.classId).transferFrom(
+        IERC721(nftpd.classAddress).transferFrom(
             address(this),
             nftpd.receiver,
             nftpd.tokenId
@@ -227,7 +227,7 @@ contract NFTBridgeUC is UniversalChanIbcApp, ERC721, IERC721Receiver {
         console.log("success2");
         console.log(nftpd.tokenId);
 
-        _receive(packet.srcPortAddr, nftpd);
+        _receive(_channelId, packet.srcPortAddr, nftpd);
 
         return AckPacket(true, abi.encode("Acknowledged"));
     }
@@ -243,15 +243,24 @@ contract NFTBridgeUC is UniversalChanIbcApp, ERC721, IERC721Receiver {
 
         require(channelId[_chain] != bytes32(0x0), "chain not configured");
 
-        if (_compare(nftpd.hops, "")) {
-            IERC721(nftpd.classId).safeTransferFrom(
+        // if (_compare(nftpd.hops, "")) {
+        //     IERC721(nftpd.classId).safeTransferFrom(
+        //         msg.sender,
+        //         address(this),
+        //         nftpd.tokenId
+        //     );
+        // } else {
+        //     _burn(nftpd.tokenId);
+        // }
+
+        IERC721(nftpd.classAddress).safeTransferFrom(
                 msg.sender,
-                address(this),
-                nftpd.tokenId
-            );
-        } else {
-            _burn(nftpd.tokenId);
-        }
+                 address(this),
+                 nftpd.tokenId
+        );
+
+
+        
         // token = nft.GetNFT(classId, tokenId)
         // increment();
         // bytes memory payload = abi.encode(msg.sender, counter);
@@ -350,7 +359,7 @@ contract NFTBridgeUC is UniversalChanIbcApp, ERC721, IERC721Receiver {
             keccak256(abi.encodePacked(str2));
     }
 
-    function substring(string calldata str, uint startIndex, uint endIndex) private pure returns (string memory) {
+    function substring(string memory str, uint startIndex, uint endIndex) private pure returns (string memory) {
         bytes memory strBytes = bytes(str);
         bytes memory result = new bytes(endIndex-startIndex);
         for(uint i = startIndex; i < endIndex; i++) {

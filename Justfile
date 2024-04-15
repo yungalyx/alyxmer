@@ -133,11 +133,18 @@ dew-it:
     echo "Success!"
 
 
-deploy-test: 
+deploy-bridges: 
     echo "Deploying NFT Bridge on Testnet"
     just set-contracts optimism NFTBridgeUC && just set-contracts base NFTBridgeUC
     just deploy optimism base true
     echo "Deployment Successful!"
+
+
+deploy-nft CHAIN: 
+    echo "Deploying NFT Contract..."
+    just set-contracts optimism NFT
+    npx hardhat run scripts/deploy-nft.js --network {{CHAIN}}
+    echo "NFT Deployment Succesful!"
 
 # Clean up the environment by removing the artifacts and cache folders and running the forge clean command
 # Usage: just clean
