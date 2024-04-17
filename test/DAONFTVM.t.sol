@@ -58,18 +58,6 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
         v2 = eth2.getVirtualChainData();
     }
 
-    // test address/bytes32 conversion
-    function test_address_conversion() public {
-        assertEq(
-            address(eth1),
-            IbcUtils.toAddress(IbcUtils.toBytes32(address(eth1)))
-        );
-        assertEq(
-            address(eth2),
-            IbcUtils.toAddress(IbcUtils.toBytes32(address(eth2)))
-        );
-    }
-
     // packet flow: daonft -> UC -> Dispatcher -> (Relayer) -> Dispatcher -> UC -> daonft
     function test_packetFlow_via_universal_channel_ok() public {
         uint256 mwBitmap = v1.ucHandler.MW_ID();

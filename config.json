@@ -1,8 +1,8 @@
 {
   "proofsEnabled": false,
   "deploy": {
-    "optimism": "XCounterUC",
-    "base": "XCounterUC"
+    "optimism": "NFT",
+    "base": "NFTBridgeUC"
   },
   "createChannel": {
     "srcChain": "optimism",
@@ -27,12 +27,12 @@
   },
   "sendUniversalPacket": {
     "optimism": {
-      "portAddr": "0xBd34c20C4a64912Aa5f54E6529C8CFB3f2208317",
+      "portAddr": "0x6d40e3d7415F7D3625096Dcd4Fe03B67e867F7a8",
       "channelId": "channel-10",
       "timeout": 36000
     },
     "base": {
-      "portAddr": "0xA5461C707569F74cF4A55B940298BC96b89a3ee5",
+      "portAddr": "0xFe5FBCAeDCb4c64A181F163b462bbB7d8F2483D6",
       "channelId": "channel-11",
       "timeout": 36000
     }

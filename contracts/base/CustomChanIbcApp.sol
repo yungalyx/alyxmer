@@ -70,6 +70,8 @@ contract CustomChanIbcApp is IbcReceiverBase, IbcReceiver {
     function onAcknowledgementPacket(IbcPacket calldata packet, AckPacket calldata ack) external virtual onlyIbcDispatcher {
         ackPackets.push(ack);
         // do logic
+        uint64 goo = packet.sequence;
+        abi.encodePacked(goo);
     }
 
     /**

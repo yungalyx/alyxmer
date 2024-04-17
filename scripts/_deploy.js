@@ -23,7 +23,7 @@ async function main() {
   }
 
   // TODO: update to switch statement when supporting more networks
-const dispatcherAddr = getDispatcherAddress(networkName);
+  const dispatcherAddr = getDispatcherAddress(networkName);
   const constructorArgs = [dispatcherAddr, ...(args ?? [])];
   
   // Deploy the contract
